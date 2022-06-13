@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "antd": "^4.21.0",
+    "react-google-places-autocomplete": "^3.3.4"
+  }
+}
