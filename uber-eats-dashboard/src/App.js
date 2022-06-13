@@ -1,6 +1,7 @@
 import DetailedOrder from './modules/DetailedOrder';
 import Orders from './modules/Orders';
 import RestaurantMenu from './modules/RestaurantMenu';
+import CreateMenuItem from './modules/CreateMenuItem';
 import {Routes, Route} from 'react-router-dom';
 import { Layout, Image } from "antd";
 import SideMenu from '../src/components/SideMenu/index.js'
@@ -27,6 +28,7 @@ function App() {
               <Route path="" element={<Orders/>}/>
               <Route path="order/:id" element={<DetailedOrder/>}/>
               <Route path= "menu" element ={<RestaurantMenu />} />
+              <Route path= "menu/create" element ={<CreateMenuItem />} />
             </Routes>
           </Content>
           <Footer style={{ textAlign: "center" }}>
