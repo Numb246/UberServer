@@ -1,32 +1,52 @@
 import { useState, useEffect } from "react";
-import { Card, Table, Tag } from 'antd';
+import { Card, Table, Tag } from "antd";
 import { useNavigate } from "react-router-dom";
 
 import { DataStore } from "aws-amplify";
 import { Order, OrderStatus } from "../../models";
-
-
-
+import { useRestaurantContext } from "../../contexts/RestaurantContext";
 const Orders = () => {
   const [orders, setOrders] = useState([]);
+  const { restaurant } = useRestaurantContext();
 
   const navigate = useNavigate();
 
   useEffect(() => {
-    DataStore.query(Order).then (setOrders);
-      
+    if (!restaurant) {
+      return;
+    }
+    DataStore.query(Order, (order) =>
+      order
+        .orderRestaurantId("eq", restaurant.id)
+        .or((orderStatus) =>
+          orderStatus
+            .status("eq", "NEW")
+            .status("eq", "COOKING")
+            .status("eq", "ACCEPTED")
+            .status("eq", "READY_FOR_PICKUP")
+        )
+    ).then(setOrders);
+  }, [restaurant]);
+  useEffect(() => {
+    const subscription = DataStore.observe(Order).subscribe((msg) => {
+      const { opType, element } = msg;
+      if (opType === "INSERT" && element.orderRestaurantId === restaurant.id) {
+        setOrders((existingOrders) => [element, ...existingOrders]);
+      }
+    });
+    return () => subscription.unsubscribe();
   }, []);
-
   const renderOrderStatus = (orderStatus) => {
     const statusToColor = {
       [OrderStatus.NEW]: "green",
       [OrderStatus.COOKING]: "orange",
       [OrderStatus.READY_FOR_PICKUP]: "red",
+      [OrderStatus.ACCEPTED]: "purple",
     };
 
     return <Tag color={statusToColor[orderStatus]}>{orderStatus}</Tag>;
   };
-  
+
   const tableColumns = [
     {
       title: "Order ID",
@@ -34,9 +54,9 @@ const Orders = () => {
       key: "id",
     },
     {
-      title: "Delivery Address",
-      dataIndex: "deliveryAddress",
-      key: "deliveryAddress",
+      title: "Created at",
+      dataIndex: "createdAt",
+      key: "createdAt",
     },
     {
       title: "Price",
@@ -49,7 +69,6 @@ const Orders = () => {
       dataIndex: "status",
       key: "status",
       render: renderOrderStatus,
-
     },
   ];
   return (
@@ -57,11 +76,10 @@ const Orders = () => {
       <Table
         dataSource={orders}
         columns={tableColumns}
-        rowKey="orderID"
+        rowKey="id"
         onRow={(orderItem) => ({
-          onClick: () => navigate(`order/${orderItem.orderID}`),
+          onClick: () => navigate(`order/${orderItem.id}`),
         })}
-
       />
     </Card>
   );
